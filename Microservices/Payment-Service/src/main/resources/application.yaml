@@ -11,6 +11,6 @@ spring:
     hibernate:
       ddl-auto: update
   application:
-    name: PAYMNET-SERVICE
+    name: PAYMENT-SERVICE
   config:
     import: configserver:http://localhost:9296
