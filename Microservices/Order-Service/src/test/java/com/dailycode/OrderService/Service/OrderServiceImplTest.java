@@ -103,7 +103,7 @@ public class OrderServiceImplTest {
 		when(paymentService.doPayment(Mockito.any(PaymentRequest.class)))
 			.thenReturn(new ResponseEntity<>(2L,HttpStatus.OK));
 		
-		long orderId = orderService.placeOrder(orderRequest);
+		Long orderId = orderService.placeOrder(orderRequest);
 		
 		verify(repository,times(2)).save(Mockito.any());
 		verify(paymentService,times(1)).doPayment(Mockito.any(PaymentRequest.class));
@@ -112,29 +112,39 @@ public class OrderServiceImplTest {
 		Assertions.assertEquals(orderId, order.getOrderID());
 	}
 	
-	
-	private PaymentRequest getMockPaymentReqeust() {
-		// TODO Auto-generated method stub
-		return PaymentRequest
-				.builder()
-				.amount(10000L)
-				.orderID(2L)
-				.paymentMode("CASH")
-				.referenceNumber("233")
-				.build();
+	@DisplayName("Place Order - Payment Failure")
+	@Test
+	void test_When_place_order_payment_Failure() {
+		OrderRequest orderRequest = getMockOrderRequest();
+		Order order = getMockOrder();
+		
+		when(repository.save(Mockito.any(Order.class)))
+			.thenReturn(order);
+		when(productService.reduceQuantity(Mockito.anyLong(), Mockito.anyLong()))
+			.thenReturn(new ResponseEntity<>(HttpStatus.OK));
+		when(paymentService.doPayment(Mockito.any(PaymentRequest.class)))
+		.thenThrow(new RuntimeException());
+		
+		Long orderId = orderService.placeOrder(orderRequest);
+		
+		verify(repository,times(2)).save(Mockito.any());
+		verify(paymentService,times(1)).doPayment(Mockito.any(PaymentRequest.class));
+		verify(productService,times(1)).reduceQuantity(Mockito.anyLong(), Mockito.anyLong());
+		
+		Assertions.assertEquals(orderId, order.getOrderID());
+		Assertions.assertEquals(order.getOrderStatus(), "PAYMENT_FAILED");
 	}
 
 	private Order getMockOrder() {
-		Order order = Order
+		return Order
 					.builder()
 					.amount(1000)
 					.orderID(2L)
 					.OrderDate(Instant.now())
 					.orderStatus("PLACED")
-					.quantity(2L)
-					.productID(1L)
+					.quantity(1L)
+					.productID(152L)
 					.build();
-		return order;
 	}
 	
 	private PaymentResponse getMockPaymentResponse() {
